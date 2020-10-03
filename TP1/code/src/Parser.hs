@@ -45,7 +45,10 @@ lis = makeTokenParser
 --- Parser de expressiones enteras
 -----------------------------------
 intexp :: Parser (Exp Int)
-intexp = chainl1 term addopp
+intexp = chainl1 intexp' (try (do reservedOp lis ","
+                                  return ESeq))
+
+intexp' = chainl1 term addopp
 
 term = chainl1 factor multopp
 
@@ -53,9 +56,13 @@ factor = try (parens lis intexp)
          <|> try (do reservedOp lis "-"
                      f <- factor
                      return (UMinus f))
-         <|> (do n <- integer lis
-                 retrun (Const n)
-              <|> do str <- identifier lis
+         <|> try (do n <- integer lis
+                     return (Const n))
+         <|> try (do str <- identifier lis
+                     reservedOp lis "="
+                     e <- intexp
+                     return (EAssgn str e))
+         <|> try (do str <- identifier lis
                      return (Var str))
 
 addopp = do try (reservedOp lis "+")
@@ -116,25 +123,25 @@ comm' = try (do reserved lis "skip"
                 return Skip)
         <|> try (do reserved lis "if"
                     cond <- boolexp
-                    -- ~ parse {
+                    symbol {
                     case1 <- comm
-                    -- ~ parse }
+                    symbol }
                     reserved lis "else"
-                    -- ~ parse {
+                    symbol {
                     case2 <- comm
-                    -- ~ parse }
+                    symbol }
                     return (IfThenElse cond case1 case2))
         <|> try (do reserved lis "if"
                     cond <- boolexp
-                    -- ~ parse {
+                    symbol {
                     case1 <- comm
-                    -- ~ parse }
+                    symbol }
                     return (IfThenElse cond case1 Skip))
         <|> try (do reserved lis "while"
                     cond <- boolexp
-                    -- ~ parse {
+                    symbol {
                     c <- comm
-                    -- ~ parse }
+                    symbol }
                     return (While cond c))
         <|> try (do str <- identifier lis
                     reservedOp lis "="

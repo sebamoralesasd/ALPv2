@@ -8,6 +8,8 @@ data Exp a where
   -- Expresiones enteras
   Const ::Int -> Exp Int
   Var ::Variable -> Exp Int
+  EAssgn :: Variable -> Exp Int
+  ESeq :: Exp Int -> Exp Int -> Exp Int
   UMinus ::Exp Int -> Exp Int
   Plus ::Exp Int -> Exp Int -> Exp Int
   Minus ::Exp Int -> Exp Int -> Exp Int
