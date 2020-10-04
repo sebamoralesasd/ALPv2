@@ -54,7 +54,7 @@ factor = try (parens lis intexp)
                      f <- factor
                      return (UMinus f))
          <|> (do n <- integer lis
-                 retrun (Const n)
+                 return (Const $ fromInteger n)
               <|> do str <- identifier lis
                      return (Var str))
 
@@ -78,19 +78,19 @@ boolexp = chainl1 boolexp' (try (do reservedOp lis "||"
 
 boolexp' = chainl1 boolexp'' (try (do reservedOp lis "&&"
                                       return And))
-                                      
+
 boolexp'' = try (parens lis boolexp)
             <|> try (do reservedOp lis "!"
                         b <- boolexp''
                         return (Not b))
             <|> intComp
             <|> boolValue
-            
+
 intComp = try (do a <- intexp
                   c <- compOp
                   b <- intexp
-                  retrun (c a b))
-                  
+                  return (c a b))
+
 compOp = try (do reservedOp lis "=="
                  return Eq)
          <|> (do reservedOp lis "!="
@@ -111,30 +111,31 @@ boolValue = try (do reserved lis "true"
 comm :: Parser Comm
 comm = chainl1 comm' (try (do reservedOp lis ";"
                               return Seq))
-                              
+
 comm' = try (do reserved lis "skip"
                 return Skip)
         <|> try (do reserved lis "if"
                     cond <- boolexp
-                    -- ~ parse {
+                    symbol lis "{"
                     case1 <- comm
                     -- ~ parse }
+                    symbol lis "}"
                     reserved lis "else"
-                    -- ~ parse {
+                    symbol lis "{"
                     case2 <- comm
-                    -- ~ parse }
+                    symbol lis "}"
                     return (IfThenElse cond case1 case2))
         <|> try (do reserved lis "if"
                     cond <- boolexp
-                    -- ~ parse {
+                    symbol lis "{"
                     case1 <- comm
-                    -- ~ parse }
+                    symbol lis "}"
                     return (IfThenElse cond case1 Skip))
         <|> try (do reserved lis "while"
                     cond <- boolexp
-                    -- ~ parse {
+                    symbol lis "{"
                     c <- comm
-                    -- ~ parse }
+                    symbol lis "}"
                     return (While cond c))
         <|> try (do str <- identifier lis
                     reservedOp lis "="
