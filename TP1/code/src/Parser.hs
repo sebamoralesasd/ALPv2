@@ -45,7 +45,10 @@ lis = makeTokenParser
 --- Parser de expressiones enteras
 -----------------------------------
 intexp :: Parser (Exp Int)
-intexp = chainl1 term addopp
+intexp = chainl1 intexp' (try (do reservedOp lis ","
+                                  return ESeq))
+
+intexp' = chainl1 term addopp
 
 term = chainl1 factor multopp
 
@@ -53,9 +56,13 @@ factor = try (parens lis intexp)
          <|> try (do reservedOp lis "-"
                      f <- factor
                      return (UMinus f))
-         <|> (do n <- integer lis
-                 return (Const $ fromInteger n)
-              <|> do str <- identifier lis
+         <|> try (do n <- integer lis
+                     return (Const $ fromInteger n))
+         <|> try (do str <- identifier lis
+                     reservedOp lis "="
+                     e <- intexp
+                     return (EAssgn str e))
+         <|> try (do str <- identifier lis
                      return (Var str))
 
 addopp = do try (reservedOp lis "+")
@@ -118,7 +125,6 @@ comm' = try (do reserved lis "skip"
                     cond <- boolexp
                     symbol lis "{"
                     case1 <- comm
-                    -- ~ parse }
                     symbol lis "}"
                     reserved lis "else"
                     symbol lis "{"
