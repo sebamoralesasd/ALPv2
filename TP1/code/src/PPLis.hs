@@ -15,7 +15,7 @@ pExp :: Exp a -> Doc
 pExp (Const  i )  = int i
 pExp (Var    x )  = pVar x
 pExp (EAssgn v e) = pVar v <+> text "=" <+> pExp e
-pExp (Eseq a b)   = pExp a <+> text "," <+> pExp b
+pExp (ESeq a b)   = pExp a <+> text "," <+> pExp b
 pExp (UMinus n )  = text "-" <+> pExp n
 pExp (Plus  a b)  = pExp a <+> text "+" <+> pExp b
 pExp (Times a b)  = pExp a <+> text "*" <+> pExp b
