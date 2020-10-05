@@ -12,20 +12,16 @@ import           Data.Strict.Tuple
 type State = M.Map Variable Int
 
 -- Estado nulo
--- Completar la definición
 initState :: State
 initState = M.empty
--- ~ fromlist []
 
 -- Busca el valor de una variable en un estado
--- Completar la definición
 lookfor :: Variable -> State -> Int
 lookfor v s  = case M.lookup v s of
                     Just x -> x
                     Nothing -> error "Variable no definida dentro del entorno."
 
 -- Cambia el valor de una variable en un estado
--- Completar la definición
 update :: Variable -> Int -> State -> State
 update var i state = M.insert var i state
 
@@ -40,10 +36,7 @@ stepCommStar Skip s = s
 stepCommStar c    s = Data.Strict.Tuple.uncurry stepCommStar $ stepComm c s
 
 -- Evalua un paso de un comando en un estado dado
--- Completar la definición
 stepComm :: Comm -> State -> Pair Comm State
--- ~ (:!:) :: a -> b -> Pair a b
--- ~ (a:!:b) = (a,b)
 stepComm (Let var intE) state = let (i :!: newState) = evalExp intE state
                                 in (Skip :!: (update var i newState))
 stepComm (Seq comm1 comm2) state = case (stepComm comm1 state) of
@@ -57,7 +50,6 @@ stepComm (While boolE comm) state = case (evalExp boolE state) of
                                          (False :!: newState) -> (Skip :!: newState)
 
 -- Evalua una expresion
--- Completar la definición
 evalExp :: Exp a -> State -> Pair a State
 evalExp (Const int) state = (int :!: state)
 evalExp (Var variable) state = (lookfor variable state :!: state)
