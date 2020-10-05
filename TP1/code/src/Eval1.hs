@@ -22,11 +22,12 @@ initState = M.empty
 lookfor :: Variable -> State -> Int
 lookfor v s  = case M.lookup v s of
                     Just x -> x
-                    Nothing -> error "variable no definida en el entorno"
+                    -- ~ Nothing -> error "Variable no definida dentro del entorno."
 
 -- Cambia el valor de una variable en un estado
 -- Completar la definición
 update :: Variable -> Int -> State -> State
+update var i initState = M.insert var i initState
 update var i state = M.update f var state 
                      where f = (\k -> case lookfor var state of
                                            x -> Just i)
