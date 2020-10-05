@@ -22,15 +22,12 @@ initState = M.empty
 lookfor :: Variable -> State -> Int
 lookfor v s  = case M.lookup v s of
                     Just x -> x
-                    -- ~ Nothing -> error "Variable no definida dentro del entorno."
+                    Nothing -> error "Variable no definida dentro del entorno."
 
 -- Cambia el valor de una variable en un estado
 -- Completar la definición
 update :: Variable -> Int -> State -> State
-update var i initState = M.insert var i initState
-update var i state = M.update f var state 
-                     where f = (\k -> case lookfor var state of
-                                           x -> Just i)
+update var i state = M.insert var i state
 
 -- Evalua un programa en el estado nulo
 eval :: Comm -> State
@@ -50,7 +47,7 @@ stepComm :: Comm -> State -> Pair Comm State
 stepComm (Let var intE) state = let (i :!: newState) = evalExp intE state
                                 in (Skip :!: (update var i newState))
 stepComm (Seq comm1 comm2) state = case (stepComm comm1 state) of
-                                        (Skip :!: _) -> (comm2:!:state)
+                                        (Skip :!: newState) -> (comm2:!:newState)
                                         (c :!: newState) -> ((Seq c comm2) :!: newState)
 stepComm (IfThenElse boolE comm1 comm2) state = case (evalExp boolE state) of
                                                      (True :!: newState) -> (comm1 :!: newState)
