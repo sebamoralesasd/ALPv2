@@ -136,7 +136,7 @@ comm' = try (do reserved lis "skip"
                     symbol lis "{"
                     case1 <- comm
                     symbol lis "}"
-                    return (IfThenElse cond case1 Skip))
+                    return (IfThen cond case1))
         <|> try (do reserved lis "while"
                     cond <- boolexp
                     symbol lis "{"
