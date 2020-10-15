@@ -60,7 +60,7 @@ factor = try (parens lis intexp)
                      return (Const $ fromInteger n))
          <|> try (do str <- identifier lis
                      reservedOp lis "="
-                     e <- intexp
+                     e <- intexp'
                      return (EAssgn str e))
          <|> try (do str <- identifier lis
                      return (Var str))

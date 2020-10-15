@@ -42,9 +42,9 @@ stepComm :: Comm -> State -> Either Error (Pair Comm State)
 stepComm (Let var intE)                 state = case evalExp intE state of
                                                 Left error -> Left error
                                                 Right (i :!: newState) -> Right (Skip :!: (update var i newState))
+stepcomm (Seq Skip comm2)               state = Right (comm2 :!: state)
 stepComm (Seq comm1 comm2)              state = case (stepComm comm1 state) of
                                                 Left error -> Left error
-                                                Right (Skip :!: newState) -> Right (comm2 :!: newState)
                                                 Right (c :!: newState) -> Right ((Seq c comm2) :!: newState)
 stepComm (IfThenElse boolE comm1 comm2) state = case (evalExp boolE state) of
                                                 Left error -> Left error

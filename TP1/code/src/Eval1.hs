@@ -39,8 +39,8 @@ stepCommStar c    s = Data.Strict.Tuple.uncurry stepCommStar $ stepComm c s
 stepComm :: Comm -> State -> Pair Comm State
 stepComm (Let var intE)                 state = let (i :!: newState) = evalExp intE state
                                                 in (Skip :!: (update var i newState))
+stepComm (Seq Skip comm2)               state = (comm2 :!: state)
 stepComm (Seq comm1 comm2)              state = case (stepComm comm1 state) of
-                                                (Skip :!: newState) -> (comm2 :!: newState)
                                                 (c :!: newState) -> ((Seq c comm2) :!: newState)
 stepComm (IfThenElse boolE comm1 comm2) state = case (evalExp boolE state) of
                                                 (True :!: newState) -> (comm1 :!: newState)

@@ -47,9 +47,9 @@ stepComm :: Comm -> State -> Either Error (Pair Comm State)
 stepComm (Let var intE)                 state = case evalExp intE state of
                                                 Left error -> Left error
                                                 Right (i :!: newState) -> Right (Skip :!: (update var i newState))
+stepComm (Seq Skip comm2)               state = Right (comm2 :!: state)
 stepComm (Seq comm1 comm2)              state = case (stepComm comm1 state) of
                                                 Left error -> Left error
-                                                Right (Skip :!: newState) -> Right (comm2 :!: newState)
                                                 Right (c :!: newState) -> Right ((Seq c comm2) :!: newState)
 stepComm (IfThenElse boolE comm1 comm2) state = case (evalExp boolE state) of
                                                 Left error -> Left error
@@ -85,7 +85,7 @@ evalExp (Var variable)      state = case lookfor variable state of
 evalExp (EAssgn var intE)   state = case evalExp intE state of
                                     Left error -> Left error
                                     Right (i :!: newState) -> Right (i :!: update var i newState)
-evalExp (ESeq intE1 intE2)  state = handleBinExpr intE1 intE2 state (\a b -> b)
+evalExp (ESeq intE1 intE2)  state = handleBinExpr intE1 intE2 (addwork -1 state) (\a b -> b)
 evalExp (UMinus intE)       state = handleUnExpr (evalExp intE state) (\x -> (-x))
 evalExp (Plus intE1 intE2)  state = handleBinExpr intE1 intE2 state (\a b -> a + b)
 evalExp (Minus intE1 intE2) state = handleBinExpr intE1 intE2 state (\a b -> a - b)
