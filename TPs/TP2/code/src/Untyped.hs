@@ -7,12 +7,12 @@ import           Data.Maybe
 import           Common
 
 ----------------------------------------------
--- Seccón 2  
+-- Seccón 2
 -- Ejercicio 2: Conversión a términos localmente sin nombres
 ----------------------------------------------
 
 conversion :: LamTerm -> Term
-conversion = undefined
+conversion (LVar var) = undefined
 
 -------------------------------
 -- Sección 3
@@ -35,9 +35,3 @@ eval' _          _         = undefined
 
 quote :: Value -> Term
 quote = undefined
-
-
-
-
-
-
