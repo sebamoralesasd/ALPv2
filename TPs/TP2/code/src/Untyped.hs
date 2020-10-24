@@ -15,11 +15,11 @@ conversion  :: LamTerm -> Term
 conversion l = convaux [] l
 
 convaux :: [String] -> LamTerm -> Term
-convaux xs (LVar s) = case elemIndex s (reverse xs) of
+convaux xs (LVar s) = case elemIndex s xs of
                       Nothing -> Free (Global s)
                       Just n -> Bound n
 convaux xs (App l1 l2) = (convaux xs l1) :@: (convaux xs l2)
-convaux xs (Abs s l) = Lam (convaux (xs ++ [s]) l)
+convaux xs (Abs s l) = Lam (convaux (s:xs) l)
 
 -------------------------------
 -- Sección 3
@@ -48,4 +48,16 @@ eval' (Lam t) (gEnv, lEnv) = VLam (\x-> (eval' t (gEnv, x:lEnv)))
 --------------------------------
 
 quote :: Value -> Term
-quote = undefined
+quote = quote' 0
+
+quote' :: Int -> Value -> Term
+quote' i (VLam f) = let fresh = VNeutral $ NFree (Quote i)
+                    in Lam $ quote' (i+1) (f fresh)
+quote' i (VNeutral neu) = neuQuote i neu
+
+neuQuote :: Int -> Neutral -> Term
+neuQuote i (NFree name) =
+  case name of
+    (Global str) -> Free $ Global str
+    (Quote k) -> Bound (i-k-1)
+neuQuote i (NApp neu val) = (quote' i (VNeutral neu)) :@: (quote' i val)
