@@ -32,7 +32,7 @@ vapp (VNeutral neu) val = VNeutral (NApp neu val)
 lookfor :: Name -> NameEnv Value -> Value
 lookfor name env = case lookup name env of
                      Just value -> value
-                     Nothing -> error "Variable no definida dentro del entorno."
+                     Nothing -> VNeutral (NFree name)
 
 eval :: NameEnv Value -> Term -> Value
 eval e t = eval' t (e, [])
