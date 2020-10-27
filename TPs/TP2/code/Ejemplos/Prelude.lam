@@ -1,6 +1,6 @@
 
 -- identidad
-def id = \x . x 
+def id = \x . x
 
 -- Booleanos
 def true = \ t f . t
@@ -33,8 +33,8 @@ def cons = \x xs c n . c x (xs c n)
 def isnil = \xs . xs (\x ys . false) true
 
 -- Funciones sobre listas
-def tail = \xs . fst (xs (\x r . pair (snd r) (cons x (snd r))) 
-                          (pair nil nil)) 
+def tail = \xs . fst (xs (\x r . pair (snd r) (cons x (snd r)))
+                          (pair nil nil))
 
 def head = \xs . xs (\x y . x) bottom
 
@@ -46,3 +46,9 @@ def fact = Y (\f n. (is0 n) (suc zero) (mult n (f (pred n))))
 
 -- bottom
 def bottom = (\x . x x) (\x . x x)
+
+-- map
+def map = Y (\g. \f xs. (isnil xs) nil (cons (f (head xs)) (g f (tail xs))))
+
+-- mapN
+def mapN = Y (\g .\f xs. (isnil xs) nil (cons (head xs) (g f (map f (tail xs)))))
