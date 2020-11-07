@@ -25,29 +25,31 @@ import Data.Char
     VAR     { TVar $$ }
     TYPEE   { TTypeE }
     DEF     { TDef }
-    
+    LET     { TLet }
+    IN      { TIn }
 
 %right VAR
-%left '=' 
+%left '='
 %right '->'
-%right '\\' '.' 
+%right '\\' '.' LET IN
 
 %%
 
 Def     :  Defexp                      { $1 }
         |  Exp	                       { Eval $1 }
-Defexp  : DEF VAR '=' Exp              { Def $2 $4 } 
+Defexp  : DEF VAR '=' Exp              { Def $2 $4 }
 
 Exp     :: { LamTerm }
         : '\\' VAR ':' Type '.' Exp    { LAbs $2 $4 $6 }
+        | LET VAR '=' Exp IN Exp       { LLet $2 $4 $6}
         | NAbs                         { $1 }
-        
+
 NAbs    :: { LamTerm }
         : NAbs Atom                    { LApp $1 $2 }
         | Atom                         { $1 }
 
 Atom    :: { LamTerm }
-        : VAR                          { LVar $1 }  
+        : VAR                          { LVar $1 }
         | '(' Exp ')'                  { $2 }
 
 Type    : TYPEE                        { EmptyT }
@@ -56,11 +58,11 @@ Type    : TYPEE                        { EmptyT }
 
 Defs    : Defexp Defs                  { $1 : $2 }
         |                              { [] }
-     
+
 {
 
 data ParseResult a = Ok a | Failed String
-                     deriving Show                     
+                     deriving Show
 type LineNumber = Int
 type P a = String -> LineNumber -> ParseResult a
 
@@ -71,7 +73,7 @@ thenP :: P a -> (a -> P b) -> P b
 m `thenP` k = \s l-> case m s l of
                          Ok a     -> k a s l
                          Failed e -> Failed e
-                         
+
 returnP :: a -> P a
 returnP a = \s l-> Ok a
 
@@ -92,11 +94,13 @@ data Token = TVar String
                | TAbs
                | TDot
                | TOpen
-               | TClose 
+               | TClose
                | TColon
                | TArrow
                | TEquals
                | TEOF
+               | TLet
+               | TIn
                deriving Show
 
 ----------------------------------
@@ -107,7 +111,7 @@ lexer cont s = case s of
                           | isSpace c -> lexer cont cs
                           | isAlpha c -> lexVar (c:cs)
                     ('-':('-':cs)) -> lexer cont $ dropWhile ((/=) '\n') cs
-                    ('{':('-':cs)) -> consumirBK 0 0 cont cs	
+                    ('{':('-':cs)) -> consumirBK 0 0 cont cs
                     ('-':('}':cs)) -> \ line -> Failed $ "Línea "++(show line)++": Comentario no abierto"
                     ('-':('>':cs)) -> cont TArrow cs
                     ('\\':cs)-> cont TAbs cs
@@ -117,21 +121,23 @@ lexer cont s = case s of
                     (')':cs) -> cont TClose cs
                     (':':cs) -> cont TColon cs
                     ('=':cs) -> cont TEquals cs
-                    unknown -> \line -> Failed $ 
+                    unknown -> \line -> Failed $
                      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
                     where lexVar cs = case span isAlpha cs of
                               ("E",rest)    -> cont TTypeE rest
                               ("def",rest)  -> cont TDef rest
+                              ("let",rest)  -> cont TLet rest
+                              ("in",rest)   -> cont TIn rest
                               (var,rest)    -> cont (TVar var) rest
                           consumirBK anidado cl cont s = case s of
                               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs
-                              ('{':('-':cs)) -> consumirBK (anidado+1) cl cont cs	
+                              ('{':('-':cs)) -> consumirBK (anidado+1) cl cont cs
                               ('-':('}':cs)) -> case anidado of
                                                   0 -> \line -> lexer cont cs (line+cl)
                                                   _ -> consumirBK (anidado-1) cl cont cs
                               ('\n':cs) -> consumirBK anidado (cl+1) cont cs
-                              (_:cs) -> consumirBK anidado cl cont cs     
-                                           
+                              (_:cs) -> consumirBK anidado cl cont cs
+
 stmts_parse s = parseStmts s 1
 stmt_parse s = parseStmt s 1
 term_parse s = term s 1
