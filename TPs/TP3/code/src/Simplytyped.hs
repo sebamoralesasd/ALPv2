@@ -26,7 +26,8 @@ conversion' b (LApp t u  )   = conversion' b t :@: conversion' b u
 conversion' b (LAbs n t u)   = Lam t (conversion' (n : b) u)
 -- Sección 6
 conversion' b (LLet n t1 t2) = Let (conversion' b t1) (conversion' (n:b) t2)
-
+-- Sección 7
+conversion' b (LAs t typ)    = As (conversion' b t) typ
 
 -----------------------
 --- eval
@@ -40,6 +41,8 @@ sub i t (u   :@: v)           = sub i t u :@: sub i t v
 sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
 -- Sección 6
 sub i t (Let t1 t2)           = Let (sub i t t1) (sub (i+1) t t2)
+-- Sección 7
+sub i t (As t' typ)           = As (sub i t t') typ
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
@@ -54,6 +57,8 @@ eval e (u        :@: v      ) = case eval e u of
 -- Sección 6
 eval e (Let t1 t2           ) = let value = eval e t1
                                  in eval e (sub 0 (quote value) t2)
+-- Sección 7
+eval e (As t typ            ) = eval e t
 
 -----------------------
 --- quoting
@@ -108,6 +113,7 @@ infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
     _          -> notfunError tt
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
 -- Sección 6
-infer' c e (Let t1 t2) =infer' c e t1 >>= (\tt1 -> infer' (tt1:c) e t2)
-
+infer' c e (Let t1 t2) = infer' c e t1 >>= (\tt1 -> infer' (tt1:c) e t2)
+-- Sección 7
+infer' c e (As t typ) = infer' c e t >>= (/tt -> uf tt == typ then ret typ else matchError typ tt)
 ----------------------------------

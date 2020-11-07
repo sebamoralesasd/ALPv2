@@ -27,8 +27,8 @@ pp ii vs (Bound k         ) = text (vs !! (ii - k - 1))
 pp _  _  (Free  (Global s)) = text s
 
 pp ii vs (i :@: c         ) = sep
-  [ parensIf (isLam i || isLet i) (pp ii vs i)
-  , nest 1 (parensIf (isLam c || isApp c || isLet c) (pp ii vs c))
+  [ parensIf (isLam i || isLet i || isAs i) (pp ii vs i)
+  , nest 1 (parensIf (isLam c || isApp c || isLet c || isAs c) (pp ii vs c))
   ]
 pp ii vs (Lam t c) =
   text "\\"
@@ -41,9 +41,13 @@ pp ii vs (Lam t c) =
 pp ii vs (Let t1 t2) = text "let " <>
                        text (vs !! ii) <>
                        text " = " <>
-                       parensIf (isLam t1 || isApp t1 || isLet t1) (pp ii vs t1) <>
+                       parensIf (isLam t1 || isApp t1 || isLet t1 || isAs t1) (pp ii vs t1) <>
                        text " in " <>
-                       parensIf (isLam t2 || isApp t2 || isLet t2) (pp (ii+1) vs t2)
+                       parensIf (isLam t2 || isApp t2 || isLet t2 || isAs t2) (pp (ii+1) vs t2)
+--Sección 7
+pp ii vs (As ter typ) = parensIf (isLam ter || isApp ter || isLet ter || isAs ter) (pp ii vs ter) <>
+                        text " as " <>
+                        printType typ
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
@@ -57,6 +61,9 @@ isLet :: Term -> Bool
 isLet (Let _ _) = True
 isLet _         = False
 
+isAs :: Term -> Bool
+isAs (As _ _) = True
+isAs _        = False
 -- pretty-printer de tipos
 printType :: Type -> Doc
 printType EmptyT = text "E"
@@ -75,6 +82,8 @@ fv (t   :@: u       ) = fv t ++ fv u
 fv (Lam _   u       ) = fv u
 -- Sección 6
 fv (Let t1 t2       ) = fv t1 ++ fv t2
+-- Sección 7
+fv (As ter typ      ) = fv ter
 
 ---
 printTerm :: Term -> Doc
