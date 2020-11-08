@@ -28,6 +28,8 @@ conversion' b (LAbs n t u)   = Lam t (conversion' (n : b) u)
 conversion' b (LLet n t1 t2) = Let (conversion' b t1) (conversion' (n:b) t2)
 -- Sección 7
 conversion' b (LAs t typ)    = As (conversion' b t) typ
+-- Sección 8
+conversion' b LUnit          = Unit
 
 -----------------------
 --- eval
@@ -43,6 +45,8 @@ sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
 sub i t (Let t1 t2)           = Let (sub i t t1) (sub (i+1) t t2)
 -- Sección 7
 sub i t (As t' typ)           = As (sub i t t') typ
+-- Sección 8
+sub i t Unit                  = Unit
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
@@ -59,6 +63,8 @@ eval e (Let t1 t2           ) = let value = eval e t1
                                  in eval e (sub 0 (quote value) t2)
 -- Sección 7
 eval e (As t typ            ) = eval e t
+-- Sección 8
+eval e Unit                   = VUnit
 
 -----------------------
 --- quoting
@@ -66,6 +72,7 @@ eval e (As t typ            ) = eval e t
 
 quote :: Value -> Term
 quote (VLam t f) = Lam t f
+quote VUnit      = Unit
 
 ----------------------
 --- type checker
@@ -116,4 +123,7 @@ infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
 infer' c e (Let t1 t2) = infer' c e t1 >>= (\tt1 -> infer' (tt1:c) e t2)
 -- Sección 7
 infer' c e (As t typ) = infer' c e t >>= (/tt -> uf tt == typ then ret typ else matchError typ tt)
+-- Sección 8
+infer' c e Unit = ret UnitT
+
 ----------------------------------

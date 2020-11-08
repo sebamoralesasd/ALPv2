@@ -48,6 +48,8 @@ pp ii vs (Let t1 t2) = text "let " <>
 pp ii vs (As ter typ) = parensIf (isLam ter || isApp ter || isLet ter || isAs ter) (pp ii vs ter) <>
                         text " as " <>
                         printType typ
+-- Sección 8
+pp ii vs Unit = text "unit"
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
@@ -64,12 +66,14 @@ isLet _         = False
 isAs :: Term -> Bool
 isAs (As _ _) = True
 isAs _        = False
+
 -- pretty-printer de tipos
 printType :: Type -> Doc
 printType EmptyT = text "E"
 printType (FunT t1 t2) =
   sep [parensIf (isFun t1) (printType t1), text "->", printType t2]
-
+-- Sección 8
+printType UnitT = text "Unit"
 
 isFun :: Type -> Bool
 isFun (FunT _ _) = True
@@ -84,6 +88,8 @@ fv (Lam _   u       ) = fv u
 fv (Let t1 t2       ) = fv t1 ++ fv t2
 -- Sección 7
 fv (As ter typ      ) = fv ter
+-- Sección 8
+fv Unit               = []
 
 ---
 printTerm :: Term -> Doc
