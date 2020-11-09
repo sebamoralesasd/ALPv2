@@ -179,7 +179,7 @@ infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
 infer' c e (Let t1 t2) = infer' c e t1 >>= (\tt1 -> infer' (tt1:c) e t2)
 -- Sección 7
 infer' c e (As t typ) = infer' c e t >>=
-                        (\tt -> uf tt == typ then ret typ else matchError typ tt)
+                        (\tt -> if tt == typ then ret typ else matchError typ tt)
 -- Sección 8
 infer' c e Unit = ret UnitT
 -- Sección 9
@@ -188,28 +188,28 @@ infer' c e (Pair t1 t2) = infer' c e t1 >>=
                           (\tt2 -> ret (PairT tt1 tt2)))
 infer' c e (Fst t) = infer' c e t >>=
                      (\tt -> case tt of
-                             PairT t1 t2 -> t1
-                             t -> tupleError t)
+                             PairT t1 t2 -> ret t1
+                             x -> tupleError x)
 infer' c e (Snd t) = infer' c e t >>=
                      (\tt -> case tt of
-                             PairT t1 t2 -> t2
-                             t -> tupleError t)
+                             PairT t1 t2 -> ret t2
+                             x -> tupleError x)
 -- Sección 10
 infer' c e Zero = ret NatT
 infer' c e (Suc t) = infer' c e t >>= (\tt -> case tt of
                                               NatT -> ret NatT
-                                              x -> succError)
+                                              x -> succError x)
 infer' c e (Rec t1 t2 t3) =
   infer' c e t1 >>=
     (\tt1 -> infer' c e t2 >>=
       (\tt2 -> case tt2 of
-               Fun t1A (Fun NatT t1B) -> if t1A == tt1 && t1B == tt1
+               FunT t1A (FunT NatT t1B) -> if t1A == tt1 && t1B == tt1
                                          then infer' c e t3 >>=
                                            (\tt3 -> case tt3 of
                                                     NatT -> ret tt1
                                                     x    -> rError2 x
                                            )
-                                         else rError1 tt1 (Fun t1A (Fun NatT t1B))
+                                         else rError1 tt1 (FunT t1A (FunT NatT t1B))
                t' -> rError1 tt1 t'
       )
     )

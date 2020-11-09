@@ -19,6 +19,7 @@ import Data.Char
     ':'     { TColon }
     '\\'    { TAbs }
     '.'     { TDot }
+    ','     { TComma }
     '('     { TOpen }
     ')'     { TClose }
     '->'    { TArrow }
@@ -117,6 +118,7 @@ data Token = TVar String
                | TDef
                | TAbs
                | TDot
+               | TComma
                | TOpen
                | TClose
                | TColon
@@ -149,6 +151,7 @@ lexer cont s = case s of
                     ('-':('>':cs)) -> cont TArrow cs
                     ('\\':cs)-> cont TAbs cs
                     ('.':cs) -> cont TDot cs
+                    (',':cs) -> cont TComma cs
                     ('(':cs) -> cont TOpen cs
                     ('-':('>':cs)) -> cont TArrow cs
                     (')':cs) -> cont TClose cs

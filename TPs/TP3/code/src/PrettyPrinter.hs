@@ -91,9 +91,9 @@ isAs (As _ _) = True
 isAs _        = False
 
 isPairOp :: Term -> Bool
-isPair (Fst _) = True
-isPair (Snd _) = True
-isPair _       = False
+isPairOp (Fst _) = True
+isPairOp (Snd _) = True
+isPairOp _       = False
 
 isNatOp :: Term -> Bool
 isNatOp (Suc _)     = True
