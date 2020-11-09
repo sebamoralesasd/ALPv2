@@ -32,12 +32,18 @@ import Data.Char
     UNIT    { TUnit }
     FST     { TFirst }
     SND     { TSecond }
+    ZERO    { TZero }
+    SUC     { TSuc }
+    REC     { TRec }
+    NAT     { TNat }
 
 %right VAR
 %left '='
 %right '->'
 %right '\\' '.' LET IN
 %left AS
+%right REC
+%right SUC
 %right FST SND
 
 %%
@@ -48,11 +54,13 @@ Defexp  : DEF VAR '=' Exp              { Def $2 $4 }
 
 Exp     :: { LamTerm }
         : '\\' VAR ':' Type '.' Exp    { LAbs $2 $4 $6 }
-        | LET VAR '=' Exp IN Exp       { LLet $2 $4 $6}
-        | Exp AS Type                  { LAs $1 $3}
+        | LET VAR '=' Exp IN Exp       { LLet $2 $4 $6 }
+        | Exp AS Type                  { LAs $1 $3 }
         | FST Exp                      { LFst $2 }
         | SND Exp                      { LSnd $2 }
         | '(' Exp ',' Exp ')'          { LPair $2 $4 }
+        | SUC Exp                      { LSuc $2 }
+        | REC Atom Atom Exp            { LRec $2 $3 $4 }
         | NAbs                         { $1 }
 
 NAbs    :: { LamTerm }
@@ -62,12 +70,14 @@ NAbs    :: { LamTerm }
 Atom    :: { LamTerm }
         : VAR                          { LVar $1 }
         | VUNIT                        { LUnit }
+        | ZERO                         { LZero }
         | '(' Exp ')'                  { $2 }
 
 Type    : TYPEE                        { EmptyT }
         | Type '->' Type               { FunT $1 $3 }
-        | UNIT                         { Unit }
+        | UNIT                         { UnitT }
         | '(' Type ',' Type ')'        { PairT $2 $4 }
+        | NAT                          { NatT }
         | '(' Type ')'                 { $2 }
 
 Defs    : Defexp Defs                  { $1 : $2 }
@@ -120,6 +130,10 @@ data Token = TVar String
                | TUnit
                | TFirst
                | TSecond
+               | TZero
+               | TSuc
+               | TRec
+               | TNat
                deriving Show
 
 ----------------------------------
@@ -152,6 +166,9 @@ lexer cont s = case s of
                               ("Unit",rest) -> cont TUnit rest
                               ("fst",rest)  -> cont TFirst rest
                               ("snd",rest)  -> cont TSecond rest
+                              ("succ",rest) -> cont TSuc rest
+                              ("R",rest)    -> cont TRec rest
+                              ("Nat",rest)  -> cont TNat rest
                               (var,rest)    -> cont (TVar var) rest
                           consumirBK anidado cl cont s = case s of
                               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs

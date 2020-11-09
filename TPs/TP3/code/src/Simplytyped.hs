@@ -21,19 +21,23 @@ conversion :: LamTerm -> Term
 conversion = conversion' []
 
 conversion' :: [String] -> LamTerm -> Term
-conversion' b (LVar n    )   = maybe (Free (Global n)) Bound (n `elemIndex` b)
-conversion' b (LApp t u  )   = conversion' b t :@: conversion' b u
-conversion' b (LAbs n t u)   = Lam t (conversion' (n : b) u)
+conversion' b (LVar n    )    = maybe (Free (Global n)) Bound (n `elemIndex` b)
+conversion' b (LApp t u  )    = conversion' b t :@: conversion' b u
+conversion' b (LAbs n t u)    = Lam t (conversion' (n : b) u)
 -- Sección 6
-conversion' b (LLet n t1 t2) = Let (conversion' b t1) (conversion' (n:b) t2)
+conversion' b (LLet n t1 t2)  = Let (conversion' b t1) (conversion' (n:b) t2)
 -- Sección 7
-conversion' b (LAs t typ)    = As (conversion' b t) typ
+conversion' b (LAs t typ)     = As (conversion' b t) typ
 -- Sección 8
-conversion' b LUnit          = Unit
+conversion' b LUnit           = Unit
 -- Sección 9
-conversion' b (LPair t1 t2)  = Pair (conversion' b t1) (conversion' b t2)
-conversion' b (LFst t)       = Fst (conversion' b t)
-conversion' b (LSnd t)       = Snd (conversion' b t)
+conversion' b (LPair t1 t2)   = Pair (conversion' b t1) (conversion' b t2)
+conversion' b (LFst t)        = Fst (conversion' b t)
+conversion' b (LSnd t)        = Snd (conversion' b t)
+-- Sección 10
+conversion' b LZero           = Zero
+conversion' b (LSuc t)        = Suc (conversion' b t)
+conversion' b (LRec t1 t2 t3) = Rec (conversion' b t1) (conversion' b t2) (conversion' b t3)
 
 -----------------------
 --- eval
@@ -55,6 +59,10 @@ sub i t Unit                  = Unit
 sub i t (Pair t1 t2)          = Pair (sub i t t1) (sub i t t2)
 sub i t (Fst t')              = Fst (sub i t t')
 sub i t (Snd t')              = Snd (sub i t t')
+-- Sección 10
+sub i t Zero                  = Zero
+sub i t (Suc t')              = Suc (sub i t t')
+sub i t (Rec t1 t2 t3)        = Rec (sub i t t1) (sub i t t2) (sub i t t3)
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
@@ -81,17 +89,28 @@ eval e (Fst t1              ) = case eval e t1 of
 eval e (Snd t1              ) = case eval e t1 of
                                 (VPair v1 v2) -> v2
                                 _ -> error "Error de tipo en run-time, verificar type checker"
+-- Sección 10
+eval e Zero                   = VNum NZero
+eval e (Suc t)                = case eval e t of
+                                VNum n -> VNum (NSuc n)
+                                _      -> error "Error de tipo en run-time, verificar type checker"
+eval e (Rec t1 t2 t3)         = case eval e t3 of
+                                VNum NZero    -> eval e t1
+                                VNum (NSuc n) -> eval e ((t2 :@: (quote (eval e (Rec t1 t2 (quote (VNum n)))))) :@: (quote (VNum n)))
 
 -----------------------
 --- quoting
 -----------------------
 
 quote :: Value -> Term
-quote (VLam t f)    = Lam t f
+quote (VLam t f)      = Lam t f
 --Sección 8
-quote VUnit         = Unit
+quote VUnit           = Unit
 -- Sección 9
-quote (VPair v1 v2) = Pair (quote v1) (quote v2)
+quote (VPair v1 v2)   = Pair (quote v1) (quote v2)
+-- Sección 10
+quote (VNum NZero)    = Zero
+quote (VNum (NSuc n)) = Suc (quote (VNum n))
 
 ----------------------
 --- type checker
@@ -132,6 +151,20 @@ tupleError :: Type -> Either String Type
 tupleError t = err $ "Función de tupla aplicado a un tipo "
                      ++ render (printType t) ++ "."
 
+succError :: Type -> Either String Type
+succError t = err $ "Sucesor aplicado a un tipo" ++ render (printType t) ++ "."
+
+rError1 :: Type -> Type -> Either String Type
+rError1 t1 t2 = err $ "Error de tipado en operacion R. Tipo del primer argumento: "
+                    ++ render (printType t1)
+                    ++ ". Tipo del segundo argumento: "
+                    ++ render (printType t1) ++ "."
+
+rError2 :: Type -> Either String Type
+rError2 t = err $ "Operador R con tercer argumento de tipo "
+                ++ render (printType t)
+                ++ " cuando se espera un tipo Nat."
+
 infer' :: Context -> NameEnv Value Type -> Term -> Either String Type
 infer' c _ (Bound i) = ret (c !! i)
 infer' _ e (Free  n) = case lookup n e of
@@ -161,5 +194,23 @@ infer' c e (Snd t) = infer' c e t >>=
                      (\tt -> case tt of
                              PairT t1 t2 -> t2
                              t -> tupleError t)
-  
+-- Sección 10
+infer' c e Zero = ret NatT
+infer' c e (Suc t) = infer' c e t >>= (\tt -> case tt of
+                                              NatT -> ret NatT
+                                              x -> succError)
+infer' c e (Rec t1 t2 t3) =
+  infer' c e t1 >>=
+    (\tt1 -> infer' c e t2 >>=
+      (\tt2 -> case tt2 of
+               Fun t1A (Fun NatT t1B) -> if t1A == tt1 && t1B == tt1
+                                         then infer' c e t3 >>=
+                                           (\tt3 -> case tt3 of
+                                                    NatT -> ret tt1
+                                                    x    -> rError2 x
+                                           )
+                                         else rError1 tt1 (Fun t1A (Fun NatT t1B))
+               t' -> rError1 tt1 t'
+      )
+    )
 ----------------------------------

@@ -38,26 +38,42 @@ pp ii vs (Lam t c) =
     <> text ". "
     <> pp (ii + 1) vs c
 -- Sección 6
-pp ii vs (Let t1 t2) = text "let " <>
-                       text (vs !! ii) <>
-                       text " = " <>
-                       parensIf (isLam t1 || isApp t1 || isLet t1 || isAs t1) (pp ii vs t1) <>
-                       text " in " <>
-                       parensIf (isLam t2 || isApp t2 || isLet t2 || isAs t2) (pp (ii+1) vs t2)
+pp ii vs (Let t1 t2) =
+  text "let " <>
+  text (vs !! ii) <>
+  text " = " <>
+  parensIf (isLam t1 || isApp t1 || isLet t1 || isAs t1) (pp ii vs t1) <>
+  text " in " <>
+  parensIf (isLam t2 || isApp t2 || isLet t2 || isAs t2) (pp (ii+1) vs t2)
 --Sección 7
-pp ii vs (As ter typ) = parensIf (isLam ter || isApp ter || isLet ter || isAs ter) (pp ii vs ter) <>
-                        text " as " <>
-                        printType typ
+pp ii vs (As ter typ) =
+  parensIf (isLam ter || isApp ter || isLet ter || isAs ter) (pp ii vs ter) <>
+  text " as " <>
+  printType typ
 -- Sección 8
 pp ii vs Unit = text "unit"
 -- Sección 9
 pp ii vs (Pair t1 t2) = parens ((pp ii vs t1) <>
                                 text ", " <>
                                 (pp ii vs t2))
-pp ii vs (Fst t) = text "fst " <>
-                   parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t) (pp ii vs t)
-pp ii vs (Snd t) = text "snd " <>
-                   parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t) (pp ii vs t)
+pp ii vs (Fst t) =
+  text "fst " <>
+  parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t) (pp ii vs t)
+pp ii vs (Snd t) =
+  text "snd " <>
+  parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t) (pp ii vs t)
+-- Sección 10
+pp ii vs Zero = text "0"
+pp ii vs (Suc t) =
+  text "succ" <>
+  parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t || isNatOp t)
+   (pp ii vs t)
+pp ii vs (Rec t1 t2 t3) =
+  text "R " <>
+  sep [parensIf (isLam t1 || isApp t1 || isLet t1 || isAs t1) (pp ii vs t1),
+   nest 1 (parensIf (isLam t2 || isApp t2 || isLet t2 || isAs t2) (pp ii vs t2)),
+   nest 1 (parensIf (isLam t3 || isApp t3 || isLet t3 || isAs t3) (pp ii vs t3))]
+
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
 isLam _         = False
@@ -79,6 +95,11 @@ isPair (Fst _) = True
 isPair (Snd _) = True
 isPair _       = False
 
+isNatOp :: Term -> Bool
+isNatOp (Suc _)     = True
+isNatOp (Rec _ _ _) = True
+isNatOp _           = False
+
 -- pretty-printer de tipos
 printType :: Type -> Doc
 printType EmptyT = text "E"
@@ -92,6 +113,8 @@ printType (PairT t1 t2) = text "(" <>
                           text ", " <>
                           printType t2 <>
                           text ")"
+-- Sección 10
+printType NatT = text "Nat"
 
 isFun :: Type -> Bool
 isFun (FunT _ _) = True
@@ -111,6 +134,10 @@ fv Unit               = []
 -- Sección 9
 fv (Fst t           ) = fv t
 fv (Snd t           ) = fv t
+-- Sección 10
+fv Zero               = []
+fv (Suc t           ) = fv t
+fv (Rec t1 t2 t3    ) = fv t1 ++ fv t2 ++ fv t3
 
 ---
 printTerm :: Term -> Doc
