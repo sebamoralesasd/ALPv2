@@ -27,8 +27,8 @@ pp ii vs (Bound k         ) = text (vs !! (ii - k - 1))
 pp _  _  (Free  (Global s)) = text s
 
 pp ii vs (i :@: c         ) = sep
-  [ parensIf (isLam i || isLet i || isAs i) (pp ii vs i)
-  , nest 1 (parensIf (isLam c || isApp c || isLet c || isAs c) (pp ii vs c))
+  [ parensIf (isLam i || isLet i || isAs i || isApp i || isNatOp i) (pp ii vs i)
+  , nest 1 (parensIf (isLam c || isApp c || isLet c || isAs c || isNatOp c) (pp ii vs c))
   ]
 pp ii vs (Lam t c) =
   text "\\"
@@ -58,14 +58,14 @@ pp ii vs (Pair t1 t2) = parens ((pp ii vs t1) <>
                                 (pp ii vs t2))
 pp ii vs (Fst t) =
   text "fst " <>
-  parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t) (pp ii vs t)
+  parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t || isNatOp t) (pp ii vs t)
 pp ii vs (Snd t) =
   text "snd " <>
-  parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t) (pp ii vs t)
+  parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t || isNatOp t) (pp ii vs t)
 -- Sección 10
 pp ii vs Zero = text "0"
 pp ii vs (Suc t) =
-  text "succ" <>
+  text "succ " <>
   parensIf (isApp t || isLam t || isLet t || isAs t || isPairOp t || isNatOp t)
    (pp ii vs t)
 pp ii vs (Rec t1 t2 t3) =
@@ -134,6 +134,7 @@ fv Unit               = []
 -- Sección 9
 fv (Fst t           ) = fv t
 fv (Snd t           ) = fv t
+fv (Pair t1 t2      ) = fv t1 ++ fv t2
 -- Sección 10
 fv Zero               = []
 fv (Suc t           ) = fv t
