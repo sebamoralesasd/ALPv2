@@ -63,8 +63,8 @@ stepComm (Let var ie) = do n <- evalExp ie
 stepComm (Seq c1 c2) = do stepComm c1
                           stepComm c2
 stepComm (IfThenElse be c1 c2) = do b <- evalExp be
-                                    if b then (stepComm c1)
-                                         else (stepComm c2)
+                                    if b then stepComm c1
+                                         else stepComm c2
 stepComm (While be c) = stepComm (IfThenElse be (Seq c (While be c)) Skip)
 
 -- Dados dos expresiones y un operador, resuelve aplicar el operador a las
@@ -98,5 +98,4 @@ evalExp (EAssgn var ie) = do n <- evalExp ie
                              update var n
                              return n
 evalExp (ESeq ie1 ie2) = do evalExp ie1
-                            n <- evalExp ie2
-                            return n
+                            evalExp ie2

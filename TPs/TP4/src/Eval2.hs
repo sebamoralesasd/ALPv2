@@ -57,7 +57,7 @@ instance MonadState StateError where
 -- Ejercicio 2.d: Implementar el evaluador utilizando la monada StateError.
 -- Evalua un programa en el estado nulo
 eval :: Comm -> Either Error Env
-eval c = case (runStateError (stepCommStar c) initEnv) of
+eval c = case runStateError (stepCommStar c) initEnv of
               Left err -> Left err
               Right (v :!: s) -> Right s
 
@@ -75,8 +75,8 @@ stepComm (Let var ie) = do n <- evalExp ie
 stepComm (Seq c1 c2) = do stepComm c1
                           stepComm c2
 stepComm (IfThenElse be c1 c2) = do b <- evalExp be
-                                    if b then (stepComm c1)
-                                         else (stepComm c2)
+                                    if b then stepComm c1
+                                         else stepComm c2
 stepComm (While be c) = stepComm (IfThenElse be (Seq c (While be c)) Skip)
 
 -- Dados dos expresiones y un operador, resuelve aplicar el operador a las
@@ -113,5 +113,5 @@ evalExp (EAssgn var ie) = do n <- evalExp ie
                              update var n
                              return n
 evalExp (ESeq ie1 ie2) = do evalExp ie1
-                            n <- evalExp ie2
-                            return n
+                            evalExp ie2
+                            
