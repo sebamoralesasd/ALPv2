@@ -56,10 +56,46 @@ stepCommStar c    = stepComm c >>= \c' -> stepCommStar c'
 
 -- Evalua un paso de un comando
 stepComm :: MonadState m => Comm -> m Comm
-stepComm = undefined
+stepComm Skip = return Skip
+stepComm (Let var ie) = do n <- evalExp ie
+                           update var n
+                           return Skip
+stepComm (Seq c1 c2) = do stepComm c1
+                          stepComm c2
+stepComm (IfThenElse be c1 c2) = do b <- evalExp be
+                                    if b then stepComm c1
+                                         else stepComm c2
+stepComm (While be c) = stepComm (IfThenElse be (Seq c (While be c)) Skip)
+
+-- Dados dos expresiones y un operador, resuelve aplicar el operador a las
+-- expresiones y devolver su evaluación.
+evalExpOp :: MonadState m => Exp a -> Exp a -> (a -> a -> b) -> m b
+evalExpOp e1 e2 operator =  do n1 <- evalExp e1
+                               n2 <- evalExp e2
+                               return (operator n1 n2)
 
 -- Evalua una expresion
 evalExp :: MonadState m => Exp a -> m a
-evalExp = undefined
-
-
+evalExp (Const i) = return i
+evalExp (Var v) = lookfor v
+evalExp (UMinus ie) = do n <- evalExp ie
+                         return (-n)
+evalExp (Plus ie1 ie2) = evalExpOp ie1 ie2 (+)
+evalExp (Minus ie1 ie2) = evalExpOp ie1 ie2 (-)
+evalExp (Times ie1 ie2) = evalExpOp ie1 ie2 (*)
+evalExp (Div ie1 ie2) = evalExpOp ie1 ie2 div
+evalExp BTrue = return True
+evalExp BFalse = return False
+evalExp (Lt ie1 ie2) = evalExpOp ie1 ie2 (<)
+evalExp (Gt ie1 ie2) = evalExpOp ie1 ie2 (>)
+evalExp (And be1 be2) = evalExpOp be1 be2 (&&)
+evalExp (Or be1 be2) = evalExpOp be1 be2 (||)
+evalExp (Not be) = do b <- evalExp be
+                      return (not b)
+evalExp (Eq ie1 ie2) = evalExpOp ie1 ie2 (==)
+evalExp (NEq ie1 ie2) = evalExpOp ie1 ie2 (/=)
+evalExp (EAssgn var ie) = do n <- evalExp ie
+                             update var n
+                             return n
+evalExp (ESeq ie1 ie2) = do evalExp ie1
+                            evalExp ie2
