@@ -147,6 +147,7 @@ notfunError t1 = err $ render (printType t1) ++ " no puede ser aplicado."
 notfoundError :: Name -> Either String Type
 notfoundError n = err $ show n ++ " no está definida."
 
+-- Sección 9
 tupleError :: Type -> Either String Type
 tupleError t = err $ "Función de tupla aplicado a un tipo "
                      ++ render (printType t) ++ "."
@@ -154,6 +155,7 @@ tupleError t = err $ "Función de tupla aplicado a un tipo "
 succError :: Type -> Either String Type
 succError t = err $ "Sucesor aplicado a un tipo" ++ render (printType t) ++ "."
 
+-- Sección 10
 rError1 :: Type -> Type -> Either String Type
 rError1 t1 t2 = err $ "Error de tipado en operacion R. Tipo del primer argumento: "
                     ++ render (printType t1)

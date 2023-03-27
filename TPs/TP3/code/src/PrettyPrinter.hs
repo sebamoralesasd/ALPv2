@@ -82,19 +82,22 @@ isApp :: Term -> Bool
 isApp (_ :@: _) = True
 isApp _         = False
 
+-- Sección 6
 isLet :: Term -> Bool
 isLet (Let _ _) = True
 isLet _         = False
 
+-- Sección 7
 isAs :: Term -> Bool
 isAs (As _ _) = True
 isAs _        = False
-
+-- Sección 9
 isPairOp :: Term -> Bool
 isPairOp (Fst _) = True
 isPairOp (Snd _) = True
 isPairOp _       = False
 
+-- Sección 10
 isNatOp :: Term -> Bool
 isNatOp (Suc _)     = True
 isNatOp (Rec _ _ _) = True
