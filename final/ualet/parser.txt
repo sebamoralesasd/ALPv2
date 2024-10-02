@@ -1,0 +1,11 @@
+<journal>       ::= <entry> | <entry> <newline> <journal>
+<entry>         ::= <fecha> " - " <descripcion> " - " <tipo> ":" <monto>
+<fecha>         ::= <año> "-" <mes> "-" <dia>
+<año>           ::= <digito> <digito> <digito> <digito>
+<mes>           ::= <digito> <digito>
+<dia>           ::= <digito> <digito>
+<descripcion>   ::= <caracter> | <caracter> <descripcion>
+<tipo>          ::= "ingreso" | "egreso"
+<monto>         ::= <digito> | <digito> <monto>
+<digito>        ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+<newline>       ::= "\n"
