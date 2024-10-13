@@ -27,6 +27,7 @@ library
   exposed-modules:
       Common
       Errors
+      Eval
       Global
       Lang
       Lib

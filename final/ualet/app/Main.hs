@@ -10,34 +10,24 @@ Stability   : experimental
 -}
 module Main where
 
-import Control.Monad.Catch (MonadMask)
 import System.Console.Haskeline (InputT, defaultSettings, runInputT)
-
--- import Control.Monad
 
 import Control.Exception (IOException, catch)
 import Control.Monad.Trans
 import Data.Char (isSpace)
+import Data.Foldable (forM_)
 import System.IO (hPutStrLn, stderr)
 
--- import System.Exit
-
--- import System.Process ( system )
 import Options.Applicative
 
--- import Data.Text.Lazy (unpack)
-
 import Errors
+
 import Global (GlEnv (..))
 import Lang
 import Parse (P, parseJournal, runP)
 
--- import Elab ( elab )
--- import Eval ( eval )
--- import PPrint ( pp , ppTy, ppDecl )
+import Eval (evalBalance)
 import MonadUalet
-
--- import TypeChecker ( tc, tcDecl )
 
 prompt :: String
 prompt = "Ualet> "
@@ -82,21 +72,19 @@ main = execParser opts >>= go
 -- go (Typecheck,opt, files) =
 --           runOrFail $ mapM_ (typecheckFile opt) files
 
-repl :: (MonadUalet m, MonadMask m) => [FilePath] -> InputT m ()
+repl :: (MonadUalet m) => [FilePath] -> InputT m ()
 repl args = do
   s <- lift $ catchErrors $ compileFiles args
-  case s of
-    Nothing -> return ()
-    Just x -> return x
+  Data.Foldable.forM_ s return
 
 compileFiles :: (MonadUalet m) => [FilePath] -> m ()
 compileFiles [] = return ()
 compileFiles (x : xs) = do
   modify (\s -> s{lfile = x, inter = False})
-  compileFile x
+  _ <- compileFile x
   compileFiles xs
 
-compileFile :: (MonadUalet m) => FilePath -> m Lang.Journal
+compileFile :: (MonadUalet m) => FilePath -> m ()
 compileFile f = do
   printUalet ("Abriendo " ++ f ++ "...")
   let filename = reverse (dropWhile isSpace (reverse f))
@@ -109,24 +97,17 @@ compileFile f = do
             hPutStrLn stderr ("No se pudo abrir el archivo " ++ filename ++ ": " ++ err)
             return ""
         )
-  -- decls <- parseIO filename parseJournal x
-  parseIO filename parseJournal x
-
--- mapM_ handleDecl decls
+  journal <- parseIO filename parseJournal x
+  handleJournal journal
 
 parseIO :: (MonadUalet m) => String -> P a -> String -> m a
 parseIO filename p x = case runP p x filename of
   Left e -> throwError (ParseErr e)
   Right r -> return r
 
--- typecheckDecl :: MonadUalet m => Decl NTerm -> m (Decl Term)
--- typecheckDecl (Decl p x t) = do
---         let dd = (Decl p x (elab t))
---         tcDecl dd
---         return dd
---
--- handleDecl ::  MonadUalet m => Decl NTerm -> m ()
--- handleDecl d = do
---         (Decl p x tt) <- typecheckDecl d
---         te <- eval tt
---         addDecl (Decl p x te)
+handleJournal :: (MonadUalet m) => Journal -> m ()
+handleJournal j = do
+  printUalet ("Journal parseado: " ++ show j)
+  res <- evalBalance j
+  printUalet ("Balance: " ++ show res)
+  return ()

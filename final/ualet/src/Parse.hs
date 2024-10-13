@@ -50,8 +50,8 @@ reservedOp = Tok.reservedOp lexer
 -- Parser
 -----------------------
 
-parseMonto :: P Int
-parseMonto = fromInteger <$> natural
+parseMonto :: P Int 
+parseMonto =  fromInteger <$> natural
 
 parseTipo :: P Tipo
 parseTipo =

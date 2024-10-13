@@ -10,7 +10,7 @@ data Entry = Entry
   { fecha :: Day
   , descripcion :: String
   , tipo :: Tipo
-  , monto :: Int
+  , monto :: Int 
   }
   deriving (Show)
 
