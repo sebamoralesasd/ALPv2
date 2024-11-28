@@ -22,12 +22,12 @@ import Options.Applicative
 
 import Errors
 
+import Eval
 import Global (GlEnv (..))
 import Lang
-import Parse (P, parseJournal, runP)
-
-import Eval (evalBalance)
 import MonadUalet
+import PPrint (pp, ppBalance, ppMoM)
+import Parse (P, parseJournal, runP)
 
 prompt :: String
 prompt = "Ualet> "
@@ -36,15 +36,15 @@ prompt = "Ualet> "
  Tipo para representar las banderas disponibles en línea de comando.
 -}
 data Mode
-  = Interactive
-  | Typecheck
+  = MonthOnMonth
+  | Balance
 
 -- | Parser de banderas
 parseMode :: Parser (Mode, Bool)
 parseMode =
   (,)
-    <$> ( flag' Typecheck (long "typecheck" <> short 't' <> help "Chequear tipos e imprimir el término")
-            <|> flag Interactive Interactive (long "interactive" <> short 'i' <> help "Ejecutar en forma interactiva")
+    <$> ( flag' MonthOnMonth (long "monthonmonth" <> short 'm' <> help "Obtener balance mes a mes de la bitácora")
+            <|> flag Balance Balance (long "balance" <> short 'b' <> help "Obtener balance de la bitácora")
         )
     <*> pure False
 
@@ -62,30 +62,29 @@ main = execParser opts >>= go
           <> progDesc "Ualet"
           <> header "Aplicación Ualet de la materia ALP."
       )
-
   go :: (Mode, Bool, [FilePath]) -> IO ()
-  go (Interactive, _, files) =
+  go (mode, _, files) =
     do
-      runUalet (runInputT defaultSettings (repl files))
+      _ <- runUalet (runInputT defaultSettings (repl mode files))
       return ()
 
--- go (Typecheck,opt, files) =
+-- go (Balance,opt, files) =
 --           runOrFail $ mapM_ (typecheckFile opt) files
 
-repl :: (MonadUalet m) => [FilePath] -> InputT m ()
-repl args = do
-  s <- lift $ catchErrors $ compileFiles args
-  Data.Foldable.forM_ s return
+repl :: (MonadUalet m) => Mode -> [FilePath] -> InputT m ()
+repl mode args = do
+  s <- lift $ catchErrors $ compileFiles mode args
+  forM_ s return
 
-compileFiles :: (MonadUalet m) => [FilePath] -> m ()
-compileFiles [] = return ()
-compileFiles (x : xs) = do
+compileFiles :: (MonadUalet m) => Mode -> [FilePath] -> m ()
+compileFiles _ [] = return ()
+compileFiles mode (x : xs) = do
   modify (\s -> s{lfile = x, inter = False})
-  _ <- compileFile x
-  compileFiles xs
+  _ <- compileFile mode x
+  compileFiles mode xs
 
-compileFile :: (MonadUalet m) => FilePath -> m ()
-compileFile f = do
+compileFile :: (MonadUalet m) => Mode -> FilePath -> m ()
+compileFile mode f = do
   printUalet ("Abriendo " ++ f ++ "...")
   let filename = reverse (dropWhile isSpace (reverse f))
   x <-
@@ -98,16 +97,29 @@ compileFile f = do
             return ""
         )
   journal <- parseIO filename parseJournal x
-  handleJournal journal
+  case mode of
+    Balance -> balance journal
+    MonthOnMonth -> mom journal
 
 parseIO :: (MonadUalet m) => String -> P a -> String -> m a
 parseIO filename p x = case runP p x filename of
   Left e -> throwError (ParseErr e)
   Right r -> return r
 
-handleJournal :: (MonadUalet m) => Journal -> m ()
-handleJournal j = do
-  printUalet ("Journal parseado: " ++ show j)
+balance :: (MonadUalet m) => Journal -> m ()
+balance j = do
+  journalText <- pp j
+  printUalet journalText
   res <- evalBalance j
-  printUalet ("Balance: " ++ show res)
+  balText <- ppBalance res
+  printUalet balText
+  return ()
+
+mom :: (MonadUalet m) => Journal -> m ()
+mom j = do
+  journalText <- pp j
+  printUalet journalText
+  res <- evalMoM j
+  momText <- ppMoM res
+  printUalet momText
   return ()
