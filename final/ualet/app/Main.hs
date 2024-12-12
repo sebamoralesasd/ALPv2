@@ -1,13 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
 
-{- |
-Module      : Main
-Description : Compilador de Ualet.
-Copyright   : (c) Sebastián Morales, 2024.
-License     : GPL-3
-Maintainer  : scmsasd@gmail.com
-Stability   : experimental
--}
 module Main where
 
 import System.Console.Haskeline (InputT, defaultSettings, runInputT)
@@ -67,9 +59,6 @@ main = execParser opts >>= go
     do
       _ <- runUalet (runInputT defaultSettings (repl mode files))
       return ()
-
--- go (Balance,opt, files) =
---           runOrFail $ mapM_ (typecheckFile opt) files
 
 repl :: (MonadUalet m) => Mode -> [FilePath] -> InputT m ()
 repl mode args = do

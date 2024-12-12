@@ -1,20 +1,24 @@
-{- |
-Module      : Parse
-Description : Define un parser de journal a transacciones.
-Copyright   : (c) Sebastián Morales, 2024.
-License     : GPL-3
-Maintainer  : scmsasd@gmail.com
-Stability   : experimental
--}
 module Parse (runP, P, parseJournal) where
 
-import Lang
+import Lang (Entry (Entry), Journal (..), Tipo (..))
 import Prelude hiding (const)
 
--- import Common
-import Text.Parsec hiding (parse, runP)
+import Text.Parsec (
+        ParseError,
+        Parsec,
+        anyChar,
+        eof,
+        many,
+        manyTill,
+        runParser,
+        try,
+        (<|>),
+ )
 import qualified Text.Parsec.Token as Tok
-import Text.ParserCombinators.Parsec.Language -- ( GenLanguageDef(..), emptyDef )
+import Text.ParserCombinators.Parsec.Language (
+        GenLanguageDef (commentLine, reservedNames, reservedOpNames),
+        emptyDef,
+ )
 
 import Data.Time (Day, fromGregorian)
 
@@ -50,8 +54,8 @@ reservedOp = Tok.reservedOp lexer
 -- Parser
 -----------------------
 
-parseMonto :: P Int 
-parseMonto =  fromInteger <$> natural
+parseMonto :: P Int
+parseMonto = fromInteger <$> natural
 
 parseTipo :: P Tipo
 parseTipo =

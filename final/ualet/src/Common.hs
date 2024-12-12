@@ -1,13 +1,3 @@
-{-|
-Module      : Common
-Description : Algunas operaciones generales
-Copyright   : (c) Mauro Jaskelioff, Guido Martínez, 2020.
-License     : GPL-3
-Maintainer  : mauro@fceia.unr.edu.ar
-Stability   : experimental
-
--}
-
 module Common where
 
 --------------------------
@@ -16,19 +6,22 @@ module Common where
 type Line = Int
 type Column = Int
 
-data Pos = NoPos             -- ^ No hay info de posición
-         | Pos !Line !Column -- ^ Posición en un archivo.
+data Pos
+  = -- | No hay info de posición
+    NoPos
+  | -- | Posición en un archivo.
+    Pos !Line !Column
 
 instance Semigroup Pos where
   i <> NoPos = i
-  _ <> i     = i
+  _ <> i = i
 
 instance Monoid Pos where
   mempty = NoPos
 
 instance Show Pos where
-   show (Pos line column) = "("++show line++","++show column++")"
-   show NoPos = ""
+  show (Pos line column) = "(" ++ show line ++ "," ++ show column ++ ")"
+  show NoPos = ""
 
 ---------------------
 -- Utility functions

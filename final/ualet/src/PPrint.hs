@@ -1,14 +1,27 @@
 module PPrint where
 
-import Lang
+import Lang (Entry (Entry), Journal (..), Tipo (..))
 import MonadUalet (MonadUalet)
 
-import Data.Map
+import Data.Map (Map, toList)
 import Data.Text (unpack)
-import Data.Time (Year)
 import Eval (YearMonth)
-import Prettyprinter
-import Prettyprinter.Render.Terminal
+import Prettyprinter (
+  Doc,
+  Pretty (pretty),
+  annotate,
+  defaultLayoutOptions,
+  layoutSmart,
+  sep,
+  vsep,
+ )
+import Prettyprinter.Render.Terminal (
+  AnsiStyle,
+  Color (Green, Red, White),
+  bold,
+  colorDull,
+  renderStrict,
+ )
 
 ingresoColor :: Doc AnsiStyle -> Doc AnsiStyle
 ingresoColor = annotate (colorDull Green)

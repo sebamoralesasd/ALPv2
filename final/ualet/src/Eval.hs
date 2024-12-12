@@ -1,10 +1,10 @@
 module Eval where
 
 import Control.Monad (foldM)
-import Data.Map
+import Data.Map (Map, fromListWith)
 import qualified Data.Map as Map
 import Data.Time (Day, toGregorian)
-import Lang
+import Lang (Entry (Entry), Journal (..), Tipo (Egreso, Ingreso))
 import MonadUalet (MonadUalet)
 
 evalBalance :: (MonadUalet m) => Journal -> m Int
